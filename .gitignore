@@ -1,0 +1,19 @@
+# deps
+node_modules/
+
+# build output
+dist/
+dist-ssr/
+
+# local verification scratch
+.verify/
+
+# reading materials: copyright — users add their own PDFs
+public/essays/*.pdf
+
+# logs & editor
+*.log
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
