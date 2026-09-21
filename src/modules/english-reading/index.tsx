@@ -1,18 +1,24 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useReadingModule } from './useEssays';
 import { useReadingPage } from './useReadingPage';
+import { PdfCanvas } from './PdfCanvas';
 
 export function EnglishReadingModule() {
   const { list, active, setActiveId } = useReadingModule();
   const { page, setPage, today } = useReadingPage(active);
   const [jumpTo, setJumpTo] = useState('');
+  const [totalPages, setTotalPages] = useState<number | null>(null);
+  const handleTotalPages = useCallback((n: number) => {
+    setTotalPages((prev) => (prev === n ? prev : n));
+  }, []);
 
   if (!active) {
     return <div className="module-empty">暂未配置阅读材料</div>;
   }
 
-  // PDF.js URL fragment: page=跳转 · zoom=page-fit 适合屏幕 · 隐藏工具栏
-  const pdfSrc = `${active.file}#page=${page}&zoom=page-fit&toolbar=0&navpanes=0&view=FitH`;
+  // file 是以 / 开头的绝对路径；拼上部署 base（根路径或 /myday/ 子路径都正确）
+  const base = import.meta.env.BASE_URL ?? '/';
+  const fileUrl = base.replace(/\/$/, '') + active.file;
 
   return (
     <div className="reading-module">
@@ -38,16 +44,11 @@ export function EnglishReadingModule() {
 
       <div className="reading-progress">
         第 <strong>{page}</strong> 页
+        {totalPages ? <span className="reading-total"> / {totalPages}</span> : null}
       </div>
 
-      <div className="reading-frame-wrap">
-        <iframe
-          key={`${active.id}-${page}`}
-          className="reading-frame"
-          src={pdfSrc}
-          title={`${active.title} 第 ${page} 页`}
-          loading="lazy"
-        />
+      <div className="pdf-canvas-wrap-outer">
+        <PdfCanvas url={fileUrl} page={page} onTotalPages={handleTotalPages} />
       </div>
 
       <div className="reading-controls">
@@ -66,14 +67,6 @@ export function EnglishReadingModule() {
         >
           下一页 →
         </button>
-        <a
-          className="reading-open-new"
-          href={`${active.file}#page=${page}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          整页打开
-        </a>
         <form
           className="reading-jump"
           onSubmit={(e) => {
