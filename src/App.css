@@ -728,6 +728,28 @@
   border: 1px solid #E5E1D8;
 }
 
+.pdf-canvas-status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  color: #888780;
+  background: #FAF7F1;
+  padding: 6px 14px;
+  border-radius: 6px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.pdf-canvas-error {
+  color: #B4442E;
+  border: 1px solid #E8C4B8;
+  pointer-events: auto;
+  max-width: 90%;
+  text-align: center;
+}
+
 .pdf-canvas-wrap {
   width: 100%;
   display: flex;

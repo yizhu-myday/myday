@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as pdfjs from 'pdfjs-dist'
 // Vite 会把 worker 打包成独立 chunk
 import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker'
@@ -11,22 +11,38 @@ interface Props {
   onTotalPages?: (n: number) => void
 }
 
-/** 加载文档（缓存，避免翻页时重复下载解析） */
-const docCache = new Map<string, Promise<pdfjs.PDFDocumentProxy>>()
+interface DocEntry {
+  promise: Promise<pdfjs.PDFDocumentProxy>
+}
 
-function getDoc(url: string) {
-  if (!docCache.has(url)) {
-    const task = pdfjs.getDocument({ url })
-    docCache.set(url, task.promise)
-    // 加载失败时清掉缓存，下次可重试
-    task.promise.catch(() => docCache.delete(url))
-  }
-  return docCache.get(url)!
+const docCache = new Map<string, DocEntry>()
+
+/**
+ * 先把整个 PDF 下载为 ArrayBuffer，再交给 pdf.js 渲染。
+ * 不用 pdf.js 内置网络层的原因：部分托管网关返回 chunked + 不支持
+ * Range 的响应，会让它的流式加载器永久挂起（无报错）。
+ */
+function getDoc(url: string): Promise<pdfjs.PDFDocumentProxy> {
+  const cached = docCache.get(url)
+  if (cached) return cached.promise
+
+  const promise = (async () => {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`PDF 下载失败 HTTP ${res.status}`)
+    const buf = await res.arrayBuffer()
+    return pdfjs.getDocument({ data: new Uint8Array(buf) }).promise
+  })()
+  // 失败时清缓存，允许重试
+  promise.catch(() => docCache.delete(url))
+  docCache.set(url, { promise })
+  return promise
 }
 
 export function PdfCanvas({ url, page, onTotalPages }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const renderTaskRef = useRef<pdfjs.RenderTask | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
@@ -37,6 +53,8 @@ export function PdfCanvas({ url, page, onTotalPages }: Props) {
       const ctx = canvas.getContext('2d')
       if (!ctx) return
 
+      setLoading(true)
+      setError(null)
       try {
         const doc = await getDoc(url)
         if (cancelled) return
@@ -68,10 +86,11 @@ export function PdfCanvas({ url, page, onTotalPages }: Props) {
         renderTaskRef.current = task
         await task.promise
       } catch (e) {
-        // RenderingCancelledException 是正常翻页竞争，忽略
-        if ((e as { name?: string })?.name !== 'RenderingCancelledException') {
-          console.error('[MyDay] PDF 渲染失败', e)
-        }
+        if ((e as { name?: string })?.name === 'RenderingCancelledException') return
+        console.error('[MyDay] PDF 渲染失败', e)
+        setError(e instanceof Error ? e.message : String(e))
+      } finally {
+        if (!cancelled) setLoading(false)
       }
     }
 
@@ -83,8 +102,12 @@ export function PdfCanvas({ url, page, onTotalPages }: Props) {
   }, [url, page, onTotalPages])
 
   return (
-    <div className="pdf-canvas-wrap">
-      <canvas ref={canvasRef} className="pdf-canvas" />
+    <div className="pdf-canvas-wrap-outer">
+      {loading && !error && <div className="pdf-canvas-status">加载中…</div>}
+      {error && <div className="pdf-canvas-status pdf-canvas-error">PDF 加载失败：{error}</div>}
+      <div className="pdf-canvas-wrap">
+        <canvas ref={canvasRef} className="pdf-canvas" />
+      </div>
     </div>
   )
 }
