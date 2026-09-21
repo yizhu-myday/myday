@@ -2,8 +2,12 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// GitHub Pages 部署在子路径 /myday/ 下；本地/其他托管用根路径
+const base = process.env.VITE_BASE ?? '/'
+
 // https://vite.dev/config/
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -17,12 +21,12 @@ export default defineConfig({
         background_color: '#FAF7F1',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
+        start_url: base,
+        scope: base,
         lang: 'zh-CN',
         icons: [
-          { src: '/favicon.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
-          { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: `${base}favicon.svg`, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: `${base}favicon.svg`, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
         ],
       },
       workbox: {
