@@ -19,11 +19,11 @@ export function SettingsPage() {
       </header>
 
       <p className="settings-hint">
-        关闭不再需要的模块。顺序即主页的展示顺序。
+        「今日」固定在主页顶部，始终显示。这里设置左侧边栏的模块开关与顺序。
       </p>
 
       <ul className="settings-list">
-        {configs.map((cfg, idx) => {
+        {configs.filter((c) => c.id !== 'today').map((cfg, idx, arr) => {
           const meta = moduleMeta[cfg.id];
           return (
             <li
@@ -47,7 +47,7 @@ export function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => moveDown(cfg.id)}
-                  disabled={idx === configs.length - 1}
+                  disabled={idx === arr.length - 1}
                   aria-label="下移"
                 >
                   ↓
