@@ -133,6 +133,11 @@
     overflow-x: auto;
   }
 
+  /* 纵向排列下抵消 align-items: flex-start，让内容卡占满整行 */
+  .module-content {
+    width: 100%;
+  }
+
   .sidebar-nav {
     flex-direction: row;
     gap: 4px;
