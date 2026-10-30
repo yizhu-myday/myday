@@ -5,8 +5,8 @@ import { formatCny } from '../../lib/money';
 import type { FinanceType } from '../../db';
 
 const CATEGORIES: Record<FinanceType, string[]> = {
-  expense: ['餐饮', '交通', '购物', '居家', '学习', '医疗', '人情', '其他'],
-  income: ['工资', '副业', '红包', '其他'],
+  expense: ['食材', '服饰', '护肤', '零食', '还款', '餐饮', '交通', '人情', '打印', '文具', '其他'],
+  income: ['楠楠', '五期课', '思考力课', '一对一', '晚辅', '副业', '红包', '其他'],
 };
 
 const PREVIEW_COUNT = 8;
