@@ -381,6 +381,28 @@
   color: #0F6E56;
 }
 
+/* 借出：债权，不计入支出 */
+.fin-lent {
+  color: #B58A2E;
+}
+
+.fin-stats.has-lent {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.fin-lent-note {
+  margin: 4px 2px 0;
+  font-size: 11px;
+  color: #888780;
+}
+
+@media (max-width: 640px) {
+  /* 手机上 4 张统计卡改两行两列，避免金额被压窄 */
+  .fin-stats.has-lent {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .fin-form {
   display: flex;
   flex-direction: column;

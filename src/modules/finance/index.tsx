@@ -11,6 +11,9 @@ const CATEGORIES: Record<FinanceType, string[]> = {
 
 const PREVIEW_COUNT = 8;
 
+/** 借出属债权而非花销，统计时单独列出，不计入支出与结余 */
+const LENT_OUT_CATEGORY = '借出';
+
 export function FinanceModule() {
   const { records, loading, add, remove } = useFinance();
   const [type, setType] = useState<FinanceType>('expense');
@@ -35,13 +38,17 @@ export function FinanceModule() {
   );
 
   const stats = useMemo(() => {
-    const expense = periodRecords
-      .filter((r) => r.type === 'expense')
+    const expenses = periodRecords.filter((r) => r.type === 'expense');
+    const expense = expenses
+      .filter((r) => r.category !== LENT_OUT_CATEGORY)
+      .reduce((s, r) => s + r.amount, 0);
+    const lentOut = expenses
+      .filter((r) => r.category === LENT_OUT_CATEGORY)
       .reduce((s, r) => s + r.amount, 0);
     const income = periodRecords
       .filter((r) => r.type === 'income')
       .reduce((s, r) => s + r.amount, 0);
-    return { expense, income, balance: income - expense, count: periodRecords.length };
+    return { expense, lentOut, income, balance: income - expense, count: periodRecords.length };
   }, [periodRecords]);
 
   /** 分类汇总：按类型+分类聚合，金额倒序 */
@@ -111,7 +118,7 @@ export function FinanceModule() {
 
   return (
     <div className="fin">
-      <div className="fin-stats">
+      <div className={`fin-stats${stats.lentOut > 0 ? ' has-lent' : ''}`}>
         <div className="fin-stat">
           <span className="fin-stat-label">{periodLabel}支出</span>
           <span className="fin-stat-value fin-expense">{formatCny(stats.expense)}</span>
@@ -120,6 +127,12 @@ export function FinanceModule() {
           <span className="fin-stat-label">{periodLabel}收入</span>
           <span className="fin-stat-value fin-income">{formatCny(stats.income)}</span>
         </div>
+        {stats.lentOut > 0 && (
+          <div className="fin-stat">
+            <span className="fin-stat-label">{periodLabel}借出</span>
+            <span className="fin-stat-value fin-lent">{formatCny(stats.lentOut)}</span>
+          </div>
+        )}
         <div className="fin-stat">
           <span className="fin-stat-label">结余</span>
           <span className={`fin-stat-value ${stats.balance < 0 ? 'fin-expense' : 'fin-income'}`}>
@@ -127,6 +140,9 @@ export function FinanceModule() {
           </span>
         </div>
       </div>
+      {stats.lentOut > 0 && (
+        <p className="fin-lent-note">「借出」是债权不是花销，不计入支出与结余。</p>
+      )}
 
       {months.length > 0 && (
         <div className="fin-period">
@@ -224,7 +240,13 @@ export function FinanceModule() {
           </div>
           <ul className="fin-break-list">
             {breakdown.map((b) => {
-              const base = b.type === 'expense' ? stats.expense : stats.income;
+              // 借出的占比基准是其自身合计（100%），不挤占真实支出的百分比
+              const base =
+                b.category === LENT_OUT_CATEGORY
+                  ? stats.lentOut
+                  : b.type === 'expense'
+                    ? stats.expense
+                    : stats.income;
               const pct = base > 0 ? Math.round((b.amount / base) * 100) : 0;
               return (
                 <li key={`${b.type}:${b.category}`} className="fin-break-item">
