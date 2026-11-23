@@ -4,5 +4,6 @@
   { "id": "english-listening", "enabled": true, "order": 3 },
   { "id": "english-reading", "enabled": true, "order": 4 },
   { "id": "finance", "enabled": true, "order": 5 },
-  { "id": "parcel", "enabled": true, "order": 6 }
+  { "id": "cash", "enabled": true, "order": 6 },
+  { "id": "parcel", "enabled": true, "order": 7 }
 ]

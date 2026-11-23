@@ -31,6 +31,12 @@ export const moduleMeta: Record<string, ModuleMeta> = {
     subtitle: '本地 IndexedDB · 不上云',
     accent: '#854F0B',
   },
+  cash: {
+    id: 'cash',
+    name: '现金',
+    subtitle: '现金流水 · 收支与余额',
+    accent: '#0B7285',
+  },
   parcel: {
     id: 'parcel',
     name: '取件提醒',

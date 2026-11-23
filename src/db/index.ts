@@ -26,9 +26,20 @@ export interface ParcelRecord {
   pickedAt?: number;
 }
 
+/** 现金流水记录：type 复用 FinanceType */
+export interface CashRecord {
+  id?: number;
+  amount: number;
+  type: FinanceType;
+  note?: string;
+  date: string;
+  createdAt: number;
+}
+
 class MyDayDB extends Dexie {
   finance!: Table<FinanceRecord, number>;
   parcel!: Table<ParcelRecord, number>;
+  cash!: Table<CashRecord, number>;
 
   constructor() {
     super('myday');
@@ -38,6 +49,9 @@ class MyDayDB extends Dexie {
     this.version(2).stores({
       finance: '++id, date, type, category, createdAt',
       parcel: '++id, status, deadline, createdAt',
+    });
+    this.version(3).stores({
+      cash: '++id, date, type, createdAt',
     });
   }
 }

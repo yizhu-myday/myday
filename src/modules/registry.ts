@@ -1,6 +1,7 @@
 import { TodayModule } from './today';
 import { FitnessModule } from './fitness';
 import { FinanceModule } from './finance';
+import { CashModule } from './cash';
 import { EnglishListeningModule } from './english-listening';
 import { EnglishReadingModule } from './english-reading';
 import { ParcelModule } from './parcel';
@@ -12,5 +13,6 @@ export const moduleComponents: Record<ModuleId, React.ComponentType> = {
   'english-listening': EnglishListeningModule,
   'english-reading': EnglishReadingModule,
   finance: FinanceModule,
+  cash: CashModule,
   parcel: ParcelModule,
 };

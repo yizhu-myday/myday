@@ -381,6 +381,11 @@
   color: #0F6E56;
 }
 
+/* 现金模块：余额用现金主题青色 */
+.fin-cash-balance {
+  color: #0B7285;
+}
+
 /* 借出：债权，不计入支出 */
 .fin-lent {
   color: #B58A2E;

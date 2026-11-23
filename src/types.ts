@@ -4,6 +4,7 @@ export type ModuleId =
   | 'english-listening'
   | 'english-reading'
   | 'finance'
+  | 'cash'
   | 'parcel';
 
 export interface ModuleConfig {
