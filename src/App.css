@@ -1344,7 +1344,6 @@
 }
 
 .fin-export {
-  align-self: flex-start;
   border: 1px solid #E5E1D8;
   background: #FFFFFF;
   color: #5F5E58;
@@ -1353,6 +1352,18 @@
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
+}
+
+.fin-export-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.fin-import-msg {
+  margin: 6px 2px 0;
+  font-size: 12px;
+  color: #0F6E56;
 }
 
 .fin-export:hover {

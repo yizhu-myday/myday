@@ -1,8 +1,8 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { useFinance } from './useFinance';
 import { monthPrefixOf, labelOfDate, todayStr } from '../../lib/date';
 import { formatCny } from '../../lib/money';
-import type { FinanceType } from '../../db';
+import type { FinanceRecord, FinanceType } from '../../db';
 
 const CATEGORIES: Record<FinanceType, string[]> = {
   expense: ['食材', '服饰', '护肤', '零食', '还款', '餐饮', '交通', '人情', '打印', '文具', '饮用水', '水电气', '借出', '其他'],
@@ -15,7 +15,9 @@ const PREVIEW_COUNT = 8;
 const LENT_OUT_CATEGORY = '借出';
 
 export function FinanceModule() {
-  const { records, loading, add, remove } = useFinance();
+  const { records, loading, add, addMany, remove } = useFinance();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
   const [type, setType] = useState<FinanceType>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(CATEGORIES.expense[0]);
@@ -114,6 +116,42 @@ export function FinanceModule() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  /** 导入「导出 CSV」生成的文件，重复记录（日期+类型+分类+金额+备注均相同）自动跳过 */
+  const importCsv = async (file: File) => {
+    const text = await file.text();
+    const lines = text.replace(/^\uFEFF/, '').split(/\r\n|\n/).filter((l) => l.trim());
+    if (lines.length === 0) {
+      setImportMsg('文件是空的');
+      return;
+    }
+    // 跳过表头（若存在）
+    const dataLines = lines[0].includes('类型') && lines[0].includes('分类') ? lines.slice(1) : lines;
+    const seen = new Set(
+      records.map((r) => `${r.date}|${r.type}|${r.category}|${r.amount}|${r.note ?? ''}`)
+    );
+    const rows: Omit<FinanceRecord, 'id' | 'createdAt'>[] = [];
+    let skipped = 0;
+    for (const line of dataLines) {
+      // 格式：日期,类型,分类,金额,"备注"
+      const m = line.match(/^([^,]*),([^,]*),([^,]*),([^,]*),(.*)$/);
+      if (!m) { skipped++; continue; }
+      const [, date, typeName, category, amountRaw, noteRaw] = m;
+      const type: FinanceType = typeName.trim() === '收入' ? 'income' : 'expense';
+      const amount = Number(amountRaw);
+      const note = noteRaw.trim().replace(/^"|"$/g, '').replace(/""/g, '"');
+      const key = `${date.trim()}|${type}|${category.trim()}|${amount}|${note}`;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim()) || !Number.isFinite(amount) || amount <= 0 || seen.has(key)) {
+        skipped++;
+        continue;
+      }
+      seen.add(key);
+      rows.push({ date: date.trim(), type, category: category.trim(), amount: Math.round(amount * 100) / 100, note: note || undefined });
+    }
+    const added = await addMany(rows);
+    setImportMsg(`导入 ${added} 笔${skipped > 0 ? `，跳过 ${skipped} 笔（重复或格式不符）` : ''}`);
+    setTimeout(() => setImportMsg(null), 6000);
   };
 
   return (
@@ -266,11 +304,30 @@ export function FinanceModule() {
               );
             })}
           </ul>
-          <button type="button" className="fin-export" onClick={exportCsv}>
-            导出 {periodLabel} CSV
-          </button>
         </div>
       )}
+
+      {/* 导出/导入常驻显示：空数据库时也要能导入恢复 */}
+      <div className="fin-export-row">
+        <button type="button" className="fin-export" onClick={exportCsv}>
+          导出 {periodLabel} CSV
+        </button>
+        <button type="button" className="fin-export" onClick={() => fileInputRef.current?.click()}>
+          导入 CSV
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void importCsv(file);
+            e.target.value = '';
+          }}
+        />
+      </div>
+      {importMsg && <p className="fin-import-msg">{importMsg}</p>}
 
       <div className="fin-recent">
         <div className="fin-recent-head">

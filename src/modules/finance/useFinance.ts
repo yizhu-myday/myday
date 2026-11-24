@@ -23,6 +23,17 @@ export function useFinance() {
     [refresh]
   );
 
+  /** 批量导入（CSV 恢复用），返回新增条数 */
+  const addMany = useCallback(
+    async (rows: Omit<FinanceRecord, 'id' | 'createdAt'>[]) => {
+      if (rows.length === 0) return 0;
+      await db.finance.bulkAdd(rows.map((r) => ({ ...r, createdAt: Date.now() })));
+      await refresh();
+      return rows.length;
+    },
+    [refresh]
+  );
+
   const remove = useCallback(
     async (id: number) => {
       await db.finance.delete(id);
@@ -31,5 +42,5 @@ export function useFinance() {
     [refresh]
   );
 
-  return { records, loading, add, remove, refresh };
+  return { records, loading, add, addMany, remove, refresh };
 }
